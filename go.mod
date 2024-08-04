@@ -3,6 +3,7 @@ module github.com/ponyo877/go-wasm-hit-and-blow
 go 1.22.2
 
 require (
+	github.com/mowshon/iterium v1.0.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pion/webrtc/v3 v3.2.50
 	github.com/ponyo877/go-wasm-p2p-chat v0.0.0-20240529120457-b6d1e4acb1d0
@@ -31,6 +32,7 @@ require (
 	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/wlynxg/anet v0.0.3 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/exp v0.0.0-20230307190834-24139beb5833 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

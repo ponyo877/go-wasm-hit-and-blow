@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/url"
 	"syscall/js"
 	"time"
@@ -24,6 +25,7 @@ var (
 	wsScheme          string
 	matchmakingOrigin string
 	signalingOrigin   string
+	recentGuess       *Guess
 )
 
 type mmReqMsg struct {
@@ -53,6 +55,7 @@ func main() {
 	}
 	var resMsg mmResMsg
 	var dc *webrtc.DataChannel
+	ch := make(chan *Guess)
 	defer func() {
 		if dc != nil {
 			dc.Close()
@@ -60,7 +63,8 @@ func main() {
 	}()
 	var conn *ayame.Connection
 	connected := make(chan bool)
-	js.Global().Set("startNewChat", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
+	board := NewBoard()
+	js.Global().Set("startSearchPlayer", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
 		go func() {
 			ws, _, err := websocket.Dial(context.Background(), mmURL.String(), nil)
 			if err != nil {
@@ -87,13 +91,25 @@ func main() {
 				conn.OnOpen(func(metadata *interface{}) {
 					log.Println("Open")
 					var err error
-					dc, err = conn.CreateDataChannel("matchmaking-example", nil)
+					dc, err = conn.CreateDataChannel("matchmaking-hit&blow", nil)
 					if err != nil && err != fmt.Errorf("client does not exist") {
 						log.Printf("CreateDataChannel error: %v", err)
 						return
 					}
 					log.Printf("CreateDataChannel: label=%s", dc.Label())
-					dc.OnMessage(onMessage())
+					rand.NewSource(time.Now().UnixNano())
+					seed := rand.Int()
+
+					initTurn := NewTurnBySeed(seed)
+					myHand := NewHandBySeed(seed)
+					board.Start(myHand, initTurn)
+					startMsg := Message{Type: "start", Turn: int(initTurn)}
+					by, _ := json.Marshal(startMsg)
+					if err := dc.SendText(string(by)); err != nil {
+						handleError()
+						return
+					}
+					dc.OnMessage(onMessage(dc, ch, board))
 				})
 
 				conn.OnConnect(func() {
@@ -107,7 +123,7 @@ func main() {
 					if dc == nil {
 						dc = c
 					}
-					dc.OnMessage(onMessage())
+					dc.OnMessage(onMessage(dc, ch, board))
 				})
 
 				if err := conn.Connect(); err != nil {
@@ -132,10 +148,8 @@ func main() {
 			if dc == nil {
 				return
 			}
-			if err := dc.SendText(message); err != nil {
-				handleError()
-				return
-			}
+
+			ch <- NewGuessFromText(message)
 			logElem(fmt.Sprintf("[You]: %s\n", message))
 			el.Set("value", "")
 		}()
@@ -152,10 +166,111 @@ func shortHash(now time.Time) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil))[:7], nil
 }
 
-func onMessage() func(webrtc.DataChannelMessage) {
+type Message struct {
+	Type  string `json:"type"`
+	Turn  int    `json:"turn,omitempty"`
+	Hit   int    `json:"hit,omitempty"`
+	Blow  int    `json:"blow,omitempty"`
+	Guess string `json:"guess,omitempty"`
+}
+
+func onMessage(dc *webrtc.DataChannel, ch chan *Guess, board *Board) func(webrtc.DataChannelMessage) {
 	return func(msg webrtc.DataChannelMessage) {
-		if msg.IsString {
-			logElem(fmt.Sprintf("[Any]: %s\n", msg.Data))
+		if !msg.IsString {
+			return
+		}
+		var message Message
+		if err := json.Unmarshal(msg.Data, &message); err != nil {
+			log.Printf("Failed to unmarshal: %v", err)
+			return
+		}
+		logElem(fmt.Sprintf("[Any]: %s\n", msg.Data))
+		switch message.Type {
+		case "start":
+			// 非開室者Only: GameStart処理
+			if board.IsInMenu() {
+				initTurn := Turn(message.Turn).Reverse()
+				rand.NewSource(time.Now().UnixNano())
+				seed := rand.Int()
+				myHand := NewHandBySeed(seed)
+				board.Start(myHand, initTurn)
+			}
+			// 非開室者Only: 初回が後攻のときに開室者を初回guess処理に誘導
+			if board.IsOpTurn() {
+				startMsg := Message{Type: "start"}
+				by, _ := json.Marshal(startMsg)
+				if err := dc.SendText(string(by)); err != nil {
+					handleError()
+					return
+				}
+				return
+			}
+			// guess送信処理に続く
+		case "guess":
+			if board.IsMyTurn() {
+				return
+			}
+			// 自分ターンへ遷移
+			board.ToggleTurn()
+			guess := NewGuessFromText(message.Guess)
+			ans := board.CalcAnswer(guess)
+			ansMsg := Message{Type: "answer", Hit: ans.Hit(), Blow: ans.Blow()}
+			by, _ := json.Marshal(ansMsg)
+			if err := dc.SendText(string(by)); err != nil {
+				handleError()
+				return
+			}
+			if ans.IsAllHit() {
+				logElem("[Sys]: You Lose!\n")
+				board.Finish()
+				return
+			}
+			// guess送信処理に続く
+		case "answer":
+			if board.IsMyTurn() {
+				return
+			}
+			ans := NewAnswer(message.Hit, message.Blow)
+			qa := NewQA(recentGuess, ans)
+			board.AddMyQA(qa)
+			if ans.IsAllHit() {
+				logElem("[Sys]: You Win!\n")
+				board.Finish()
+				return
+			}
+			return
+		case "timeout":
+			logElem("[Sys]: Opponent Timeout! You Win!\n")
+			return
+		default:
+			return
+		}
+		if board.IsOpTurn() {
+			return
+		}
+
+		// 60sの間にguessを送信する処理
+		timeout := 60 * time.Second
+		myGuess, isTO := board.WaitGuess(ch, timeout)
+		recentGuess = myGuess
+		if isTO {
+			toMsg := Message{Type: "timeout"}
+			by, _ := json.Marshal(toMsg)
+			if err := dc.SendText(string(by)); err != nil {
+				handleError()
+				return
+			}
+			logElem("[Sys]: You Timeout! You Lose!\n")
+			board.Finish()
+			return
+		}
+		guessMsg := Message{Type: "guess", Guess: myGuess.String()}
+		by, _ := json.Marshal(guessMsg)
+		// 相手ターンへ遷移
+		board.ToggleTurn()
+		if err := dc.SendText(string(by)); err != nil {
+			handleError()
+			return
 		}
 	}
 }
