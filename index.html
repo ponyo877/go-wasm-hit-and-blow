@@ -2,20 +2,22 @@
 
 <head>
     <meta charset="utf-8">
-    <title>WebRTC P2P DataChannel Chat</title>
+    <title>P2P Hit & Blow</title>
     <link rel="stylesheet" href="https://cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-default.min.css">
 
-    <meta property="og:title" content="WebRTC P2P DataChannel Chat">
+    <meta property="og:title" content="P2P Hit & Blow">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://p2p-chat.pages.dev">
     <meta property="og:image" content="/ogp.png">
-    <meta property="og:description" content="A chat application that utilizes the WebRTC P2P DataChannel implemented with Go WebAssembly, allowing you to match and converse with random strangers.">
+    <meta property="og:description"
+        content="A Hit & Blow application that utilizes the WebRTC P2P DataChannel implemented with Go WebAssembly, allowing you to match and play with random strangers.">
     <meta property="og:locale" content="en_US">
-    <meta property="og:site_name" content="WebRTC P2P DataChannel Chat">
+    <meta property="og:site_name" content="P2P Hit & Blow">
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:description" content="A chat application that utilizes the WebRTC P2P DataChannel implemented with Go WebAssembly, allowing you to match and converse with random strangers." />
-    <meta name="twitter:title" content="WebRTC P2P DataChannel Chat" />
+    <meta name="twitter:description"
+        content="A Hit & Blow application that utilizes the WebRTC P2P DataChannel implemented with Go WebAssembly, allowing you to match and play with random strangers." />
+    <meta name="twitter:title" content="P2P Hit & Blow" />
     <meta name="twitter:site" content="@ponyo877" />
     <meta name="twitter:image" content="/ogp.png" />
     <meta name="twitter:creator" content="@ponyo877" />
@@ -25,12 +27,12 @@
 
 <body>
     <header class="sticky row">
-        <h4>WebRTC P2P DataChannel Chat</h4>
+        <h4>P2P Hit & Blow</h4>
     </header>
     <div>
-        <p><button onclick="window.startNewChat()" class="secondary">START</button></p>
+        <p><button onclick="window.Search()" class="secondary">START</button></p>
         <input id="message" type="text" value="Hello 🐶"></input>
-        <button onclick="window.sendMessage()" class="primary">SEND</button>
+        <button onclick="window.Guess()" class="primary">SEND</button>
         <h4>RECORD</h4>
         <textarea style="height:600px;width:600px;" id="logs" disabled type="text" value=""></textarea>
     </div>
