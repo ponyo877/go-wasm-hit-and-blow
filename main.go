@@ -156,10 +156,6 @@ func main() {
 			if dc == nil {
 				return
 			}
-			// if err := dc.SendText("ping"); err != nil {
-			// 	handleError()
-			// 	return
-			// }
 
 			ch <- game.NewGuessFromText(message)
 			logElem(fmt.Sprintf("[You]: %s\n", message))

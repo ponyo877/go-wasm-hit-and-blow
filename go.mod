@@ -6,7 +6,6 @@ require (
 	github.com/mowshon/iterium v1.0.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pion/webrtc/v3 v3.2.50
-	github.com/ponyo877/go-wasm-p2p-chat v0.0.0-20240529120457-b6d1e4acb1d0
 	nhooyr.io/websocket v1.8.11
 )
 
