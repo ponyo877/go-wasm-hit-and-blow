@@ -65,6 +65,20 @@ func main() {
 	var conn *ayame.Connection
 	connected := make(chan bool)
 	board := game.NewBoard()
+	// 表への書き込みのサンプル
+	bd := js.Global().Get("document").Call("getElementsByClassName", "board")
+	for i := 0; i < 2; i++ {
+		table := bd.Index(i).Call("querySelector", "table").Get("tBodies").Index(0).Get("rows")
+		for j := 1; j <= 6; j++ {
+			guess := table.Index(j).Get("cells").Index(0)
+			hit := table.Index(j).Get("cells").Index(1)
+			blow := table.Index(j).Get("cells").Index(2)
+			guess.Set("innerHTML", "9 9 9")
+			hit.Set("innerHTML", "1")
+			blow.Set("innerHTML", "1")
+		}
+	}
+
 	js.Global().Set("Search", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
 		go func() {
 			ws, _, err := websocket.Dial(context.Background(), mmURL.String(), nil)
