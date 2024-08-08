@@ -65,19 +65,6 @@ func main() {
 	var conn *ayame.Connection
 	connected := make(chan bool)
 	board := game.NewBoard()
-	// 表への書き込みのサンプル
-	bd := js.Global().Get("document").Call("getElementsByClassName", "board")
-	for i := 0; i < 2; i++ {
-		table := bd.Index(i).Call("querySelector", "table").Get("tBodies").Index(0).Get("rows")
-		for j := 1; j <= 6; j++ {
-			guess := table.Index(j).Get("cells").Index(0)
-			hit := table.Index(j).Get("cells").Index(1)
-			blow := table.Index(j).Get("cells").Index(2)
-			guess.Set("innerHTML", "9 9 9")
-			hit.Set("innerHTML", "1")
-			blow.Set("innerHTML", "1")
-		}
-	}
 
 	js.Global().Set("Search", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
 		go func() {
@@ -159,7 +146,7 @@ func main() {
 		}()
 		return js.Undefined()
 	}))
-	js.Global().Set("Guess", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
+	js.Global().Set("SendGuess", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
 		go func() {
 			el := getElementByID("message")
 			message := el.Get("value").String()
@@ -243,6 +230,8 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			hit, blow := ans.Hit(), ans.Blow()
 			ansMsg := Message{Type: "answer", Hit: &hit, Blow: &blow}
 			by, _ := json.Marshal(ansMsg)
+			board.CountTurn()
+			setScore(board, guess.View(), hit, blow)
 			log.Printf("ansMsg: %v", string(by))
 			if err := dc.SendText(string(by)); err != nil {
 				log.Printf("failed to send ansMsg: %v", err)
@@ -259,8 +248,10 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 				return
 			}
 			ans := game.NewAnswer(*message.Hit, *message.Blow)
-			qa := game.NewQA(recentGuess, ans)
-			board.AddMyQA(qa)
+			board.CountTurn()
+			setScore(board, recentGuess.View(), ans.Hit(), ans.Blow())
+			_ = game.NewQA(recentGuess, ans)
+			// board.AddMyQA(qa)
 			if ans.IsAllHit() {
 				logElem("[Sys]: You Win!\n")
 				board.Finish()
@@ -292,7 +283,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			board.Finish()
 			return
 		}
-		guessMsg := Message{Type: "guess", Guess: myGuess.String()}
+		guessMsg := Message{Type: "guess", Guess: myGuess.Msg()}
 		by, _ := json.Marshal(guessMsg)
 		// 相手ターンへ遷移
 		board.ToggleTurn()
@@ -304,8 +295,8 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 }
 
 func logElem(msg string) {
-	el := getElementByID("logs")
-	el.Set("innerHTML", el.Get("innerHTML").String()+msg)
+	// el := getElementByID("logs")
+	// el.Set("innerHTML", el.Get("innerHTML").String()+msg)
 }
 
 func handleError() {
@@ -314,4 +305,21 @@ func handleError() {
 
 func getElementByID(id string) js.Value {
 	return js.Global().Get("document").Call("getElementById", id)
+}
+
+func setScore(board *game.Board, guess string, hit int, blow int) {
+	var scores js.Value
+	doc := js.Global().Get("document").Call("getElementsByClassName", "board")
+	scores = doc.Index(0).Call("querySelector", "table").Get("tBodies").Index(0).Get("rows")
+	if board.IsMyTurn() {
+		scores = doc.Index(1).Call("querySelector", "table").Get("tBodies").Index(0).Get("rows")
+	}
+	turnCount := board.TurnCount()
+	log.Printf("board.TurnCount() %d", board.TurnCount())
+	guessCell := scores.Index(turnCount).Get("cells").Index(0)
+	hitCell := scores.Index(turnCount).Get("cells").Index(1)
+	blowCell := scores.Index(turnCount).Get("cells").Index(2)
+	guessCell.Set("innerHTML", guess)
+	hitCell.Set("innerHTML", hit)
+	blowCell.Set("innerHTML", blow)
 }

@@ -63,7 +63,7 @@
             margin-bottom: 20px;
         }
         .board table {
-            width: 100%;
+            width: 20vh;
             border-collapse: collapse;
         }
         .board th, .board td {
@@ -99,6 +99,7 @@
     </style>
 </head>
 <body>
+    <p><button onclick="window.Search()" class="secondary">START</button></p>
     <div class="container">
         <div class="title">
             <div class="win">WIN</div>
@@ -122,21 +123,11 @@
                         <th>H</th>
                         <th>B</th>
                     </tr>
-                    <tr>
-                        <td>0 1 2</td>
-                        <td>1</td>
-                        <td>2</td>
-                    </tr>
-                    <tr>
-                        <td>3 4 5</td>
-                        <td>0</td>
-                        <td>0</td>
-                    </tr>
-                    <tr>
-                        <td>0 8 9</td>
-                        <td>3</td>
-                        <td>0</td>
-                    </tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
                     <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
                     <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
                     <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
@@ -149,16 +140,10 @@
                         <th>H</th>
                         <th>B</th>
                     </tr>
-                    <tr>
-                        <td>0 1 2</td>
-                        <td>1</td>
-                        <td>2</td>
-                    </tr>
-                    <tr>
-                        <td>3 4 5</td>
-                        <td>0</td>
-                        <td>0</td>
-                    </tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
                     <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
                     <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
                     <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
@@ -168,7 +153,8 @@
         </div>
         <div class="numbers">
             <div>59</div>
-            <div>7 4 0</div>
+            <input id="message" type="text" value=""></input>
+            <button onclick="window.SendGuess()" class="primary">SEND</button>
         </div>
         <div class="buttons">
             <button>0</button>

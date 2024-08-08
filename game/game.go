@@ -69,7 +69,12 @@ func NewGuessFromText(numStr string) *Guess {
 	return &guess
 }
 
-func (g *Guess) String() string {
+func (g *Guess) View() string {
+	n := []int(*g)
+	return fmt.Sprintf("%d %d %d", n[0], n[1], n[2])
+}
+
+func (g *Guess) Msg() string {
 	n := []int(*g)
 	return fmt.Sprintf("%d%d%d", n[0], n[1], n[2])
 }
@@ -125,16 +130,20 @@ func NewQA(guess *Guess, answer *Answer) *QA {
 }
 
 type Board struct {
-	state   State
-	turn    Turn
-	myHands *Hand
-	myQA    []*QA
-	opQA    []*QA
+	state       State
+	turn        Turn
+	myHands     *Hand
+	myQA        []*QA
+	opQA        []*QA
+	myTurnCount int
+	opTurnCount int
 }
 
 func NewBoard() *Board {
 	return &Board{
 		state: InMenu,
+		myQA:  make([]*QA, 0),
+		opQA:  make([]*QA, 0),
 	}
 }
 
@@ -156,6 +165,22 @@ func (b *Board) IsOpTurn() bool {
 
 func (b *Board) ToggleTurn() {
 	b.turn = b.turn.Reverse()
+}
+
+func (b *Board) CountTurn() {
+	if b.IsMyTurn() {
+		b.myTurnCount++
+	}
+	if b.IsOpTurn() {
+		b.opTurnCount++
+	}
+}
+
+func (b *Board) TurnCount() int {
+	if b.IsMyTurn() {
+		return b.myTurnCount
+	}
+	return b.opTurnCount
 }
 
 func (b *Board) Start(hand *Hand, initTurn Turn) {
