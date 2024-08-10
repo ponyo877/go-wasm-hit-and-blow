@@ -131,6 +131,7 @@ func NewQA(guess *Guess, answer *Answer) *QA {
 
 type Board struct {
 	state       State
+	initTurn    Turn
 	turn        Turn
 	myHands     *Hand
 	myQA        []*QA
@@ -185,8 +186,26 @@ func (b *Board) TurnCount() int {
 
 func (b *Board) Start(hand *Hand, initTurn Turn) {
 	b.state = Playing
-	b.turn = initTurn
+	b.initTurn, b.turn = initTurn, initTurn
 	b.myHands = hand
+}
+
+type JudgeStatus int
+
+const (
+	NotYet JudgeStatus = iota
+	Win
+	Lose
+	Draw
+)
+const maxTurnCount = 8
+
+func (b *Board) Judge() JudgeStatus {
+	if b.myTurnCount == b.opTurnCount && b.myTurnCount == maxTurnCount {
+		return Draw
+	}
+	// TODO: ここでjudge処理を追加
+	return NotYet
 }
 
 func (b *Board) Finish() {
