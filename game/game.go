@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"log"
 	"slices"
 	"time"
 
@@ -201,10 +202,31 @@ const (
 const maxTurnCount = 8
 
 func (b *Board) Judge() JudgeStatus {
+
+	// 自分のターン(answer送信) && 自分スタート -> 負け
+	// 自分のターン(answer送信) && 自分スタート -> 自分3hit && 相手3hitじゃない -> 勝ち
+	if b.IsMyTurn() && b.initTurn == MyTurn {
+		if b.opQA[len(b.opQA)-1].answer.IsAllHit() {
+			return Lose
+		}
+		if b.myQA[len(b.myQA)-1].answer.IsAllHit() && !b.opQA[len(b.opQA)-1].answer.IsAllHit() {
+			return Win
+		}
+	}
+
+	// 相手のターン(answer受取) && 相手スタート -> 勝ち
+	// 相手のターン(answer受取) && 相手スタート -> 相手3Hit && 自分3hitじゃない -> 負け
+	if b.IsOpTurn() && b.initTurn == OpTurn {
+		if b.myQA[len(b.myQA)-1].answer.IsAllHit() {
+			return Win
+		}
+		if b.opQA[len(b.opQA)-1].answer.IsAllHit() && !b.myQA[len(b.myQA)-1].answer.IsAllHit() {
+			return Lose
+		}
+	}
 	if b.myTurnCount == b.opTurnCount && b.myTurnCount == maxTurnCount {
 		return Draw
 	}
-	// TODO: ここでjudge処理を追加
 	return NotYet
 }
 
@@ -217,10 +239,12 @@ func (b *Board) CalcAnswer(guess *Guess) *Answer {
 }
 
 func (b *Board) AddMyQA(qa *QA) {
+	log.Printf("AddMyQA: %v", qa)
 	b.myQA = append(b.myQA, qa)
 }
 
 func (b *Board) AddOpQA(qa *QA) {
+	log.Printf("AddOpQA: %v", qa)
 	b.opQA = append(b.opQA, qa)
 }
 

@@ -231,7 +231,9 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			ansMsg := Message{Type: "answer", Hit: &hit, Blow: &blow}
 			by, _ := json.Marshal(ansMsg)
 			board.CountTurn()
+			board.AddOpQA(game.NewQA(guess, ans))
 			setScore(board, guess.View(), hit, blow)
+			setJudge(board.Judge())
 			log.Printf("ansMsg: %v", string(by))
 			if err := dc.SendText(string(by)); err != nil {
 				log.Printf("failed to send ansMsg: %v", err)
@@ -249,9 +251,9 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			}
 			ans := game.NewAnswer(*message.Hit, *message.Blow)
 			board.CountTurn()
+			board.AddMyQA(game.NewQA(recentGuess, ans))
 			setScore(board, recentGuess.View(), ans.Hit(), ans.Blow())
-			_ = game.NewQA(recentGuess, ans)
-			// board.AddMyQA(qa)
+			setJudge(board.Judge())
 			if ans.IsAllHit() {
 				logElem("[Sys]: You Win!\n")
 				board.Finish()
@@ -305,6 +307,28 @@ func handleError() {
 
 func getElementByID(id string) js.Value {
 	return js.Global().Get("document").Call("getElementById", id)
+}
+
+func setJudge(judge game.JudgeStatus) {
+	myJudge := js.Global().Get("document").Call("getElementById", "my-judge")
+	opJudge := js.Global().Get("document").Call("getElementById", "op-judge")
+	switch judge {
+	case game.Win:
+		myJudge.Set("id", "win")
+		opJudge.Set("id", "lose")
+		myJudge.Set("innerHTML", "WIN")
+		opJudge.Set("innerHTML", "LOSE")
+	case game.Lose:
+		myJudge.Set("id", "lose")
+		opJudge.Set("id", "win")
+		myJudge.Set("innerHTML", "LOSE")
+		opJudge.Set("innerHTML", "WIN")
+	case game.Draw:
+		myJudge.Set("innerHTML", "DRAW")
+		opJudge.Set("innerHTML", "DRAW")
+	default:
+		return
+	}
 }
 
 func setScore(board *game.Board, guess string, hit int, blow int) {
