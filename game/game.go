@@ -165,6 +165,14 @@ func (b *Board) IsOpTurn() bool {
 	return b.turn == OpTurn
 }
 
+func (b *Board) IsMyTurnInit() bool {
+	return b.initTurn == MyTurn
+}
+
+func (b *Board) IsOpTurnInit() bool {
+	return b.initTurn == OpTurn
+}
+
 func (b *Board) ToggleTurn() {
 	b.turn = b.turn.Reverse()
 }
@@ -202,26 +210,35 @@ const (
 const maxTurnCount = 8
 
 func (b *Board) Judge() JudgeStatus {
-
-	// 自分のターン(answer送信) && 自分スタート -> 負け
-	// 自分のターン(answer送信) && 自分スタート -> 自分3hit && 相手3hitじゃない -> 勝ち
-	if b.IsMyTurn() && b.initTurn == MyTurn {
-		if b.opQA[len(b.opQA)-1].answer.IsAllHit() {
+	var isMy3hit, isOp3hit bool
+	if len(b.myQA) > 0 {
+		isMy3hit = b.myQA[len(b.myQA)-1].answer.IsAllHit()
+	}
+	if len(b.opQA) > 0 {
+		isOp3hit = b.opQA[len(b.opQA)-1].answer.IsAllHit()
+	}
+	// 自分のターン(answer送信) && 自分スタート
+	if b.IsMyTurn() && b.IsMyTurnInit() {
+		if !isMy3hit && isOp3hit {
 			return Lose
 		}
-		if b.myQA[len(b.myQA)-1].answer.IsAllHit() && !b.opQA[len(b.opQA)-1].answer.IsAllHit() {
+		if isMy3hit && !isOp3hit {
 			return Win
+		}
+		if isMy3hit && isOp3hit {
+			return Draw
 		}
 	}
-
-	// 相手のターン(answer受取) && 相手スタート -> 勝ち
-	// 相手のターン(answer受取) && 相手スタート -> 相手3Hit && 自分3hitじゃない -> 負け
-	if b.IsOpTurn() && b.initTurn == OpTurn {
-		if b.myQA[len(b.myQA)-1].answer.IsAllHit() {
+	// 相手のターン(answer受取) && 相手スタート
+	if b.IsOpTurn() && b.IsOpTurnInit() {
+		if !isOp3hit && isMy3hit {
 			return Win
 		}
-		if b.opQA[len(b.opQA)-1].answer.IsAllHit() && !b.myQA[len(b.myQA)-1].answer.IsAllHit() {
+		if isOp3hit && !isMy3hit {
 			return Lose
+		}
+		if isMy3hit && isOp3hit {
+			return Draw
 		}
 	}
 	if b.myTurnCount == b.opTurnCount && b.myTurnCount == maxTurnCount {

@@ -106,6 +106,9 @@ func main() {
 						myHand := game.NewHandBySeed(seed)
 						log.Printf("myHand(opener): %v", myHand)
 						board.Start(myHand, initTurn)
+						if board.IsMyTurnInit() {
+							log.Printf("YOU FIRST!!!")
+						}
 						turn := int(initTurn)
 						startMsg := Message{Type: "start", Turn: &turn}
 						by, _ := json.Marshal(startMsg)
@@ -206,6 +209,9 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 				myHand := game.NewHandBySeed(seed)
 				log.Printf("myHand(unopener): %v", myHand)
 				board.Start(myHand, initTurn)
+				if board.IsMyTurnInit() {
+					log.Printf("YOU FIRST!!!")
+				}
 			}
 			// 非開室者Only: 初回が後攻のときに開室者を初回guess処理に誘導
 			if board.IsOpTurn() {
@@ -233,14 +239,14 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			board.CountTurn()
 			board.AddOpQA(game.NewQA(guess, ans))
 			setScore(board, guess.View(), hit, blow)
-			setJudge(board.Judge())
+			j := board.Judge()
+			setJudge(j)
 			log.Printf("ansMsg: %v", string(by))
 			if err := dc.SendText(string(by)); err != nil {
 				log.Printf("failed to send ansMsg: %v", err)
 				return
 			}
-			if ans.IsAllHit() {
-				logElem("[Sys]: You Lose!\n")
+			if j != game.NotYet {
 				board.Finish()
 				return
 			}
@@ -253,15 +259,16 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			board.CountTurn()
 			board.AddMyQA(game.NewQA(recentGuess, ans))
 			setScore(board, recentGuess.View(), ans.Hit(), ans.Blow())
-			setJudge(board.Judge())
-			if ans.IsAllHit() {
-				logElem("[Sys]: You Win!\n")
+			j := board.Judge()
+			setJudge(j)
+			if j != game.NotYet {
 				board.Finish()
 				return
 			}
 			return
 		case "timeout":
-			logElem("[Sys]: Opponent Timeout! You Win!\n")
+			setJudge(game.Win)
+			board.Finish()
 			return
 		default:
 			return
@@ -282,6 +289,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 				return
 			}
 			logElem("[Sys]: You Timeout! You Lose!\n")
+			setJudge(game.Lose)
 			board.Finish()
 			return
 		}
@@ -297,6 +305,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 }
 
 func logElem(msg string) {
+	log.Printf(msg)
 	// el := getElementByID("logs")
 	// el.Set("innerHTML", el.Get("innerHTML").String()+msg)
 }
