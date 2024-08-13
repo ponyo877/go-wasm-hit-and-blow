@@ -107,12 +107,13 @@ func main() {
 						log.Printf("myHand(opener): %v", myHand)
 						board.Start(myHand, initTurn)
 						if board.IsMyTurnInit() {
-							log.Printf("YOU FIRST!!!")
+							log.Printf("YOU FIRST !!!")
+							setTurn("It's Your Turn !")
 						}
 						turn := int(initTurn)
 						startMsg := Message{Type: "start", Turn: &turn}
 						by, _ := json.Marshal(startMsg)
-						time.Sleep(3 * time.Second)
+						time.Sleep(1 * time.Second)
 						log.Printf("startMsg(opener): %v", string(by))
 						if err := dc.SendText(string(by)); err != nil {
 							log.Printf("failed to send startMsg: %v", err)
@@ -222,8 +223,10 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 					return
 				}
 				log.Printf("startMsg(unopener): %v", string(by))
+				setTurn("It's Opponent's Turn, Waiting ...")
 				return
 			}
+			setTurn("It's Your Turn !")
 			// guess送信処理に続く
 		case "guess":
 			if board.IsMyTurn() {
@@ -231,6 +234,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			}
 			// 自分ターンへ遷移
 			board.ToggleTurn()
+			setTurn("It's Your Turn !")
 			guess := game.NewGuessFromText(message.Guess)
 			ans := board.CalcAnswer(guess)
 			hit, blow := ans.Hit(), ans.Blow()
@@ -247,6 +251,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 				return
 			}
 			if j != game.NotYet {
+				setTurn("Finish !!!")
 				board.Finish()
 				return
 			}
@@ -262,12 +267,14 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			j := board.Judge()
 			setJudge(j)
 			if j != game.NotYet {
+				setTurn("Finish !!!")
 				board.Finish()
 				return
 			}
 			return
 		case "timeout":
 			setJudge(game.Win)
+			setTurn("Finish !!!")
 			board.Finish()
 			return
 		default:
@@ -308,6 +315,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			}
 			logElem("[Sys]: You Timeout! You Lose!\n")
 			setJudge(game.Lose)
+			setTurn("Finish !!!")
 			board.Finish()
 			return
 		}
@@ -315,6 +323,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 		by, _ := json.Marshal(guessMsg)
 		// 相手ターンへ遷移
 		board.ToggleTurn()
+		setTurn("It's Opponent's Turn, Waiting...")
 		if err := dc.SendText(string(by)); err != nil {
 			log.Printf("failed to send guessMsg: %v", err)
 			return
@@ -378,4 +387,9 @@ func setScore(board *game.Board, guess string, hit int, blow int) {
 func setTimer(second int) {
 	timer := js.Global().Get("document").Call("getElementById", "timer")
 	timer.Set("innerHTML", second)
+}
+
+func setTurn(message string) {
+	turnElem := js.Global().Get("document").Call("getElementById", "display-turn")
+	turnElem.Set("innerHTML", message)
 }
