@@ -278,8 +278,26 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 		}
 
 		// 60sの間にguessを送信する処理
-		timeout := 60 * time.Second
-		myGuess, isTO := board.WaitGuess(ch, timeout)
+		timeout := 60
+		gracePeriod := 1
+		toChan := make(chan struct{})
+		go func(to int, ch chan struct{}) {
+			for {
+				select {
+				case <-ch:
+					log.Printf("catch guess!!!!")
+					return
+				default:
+					to--
+					setTimer(to)
+					if to <= 0 {
+						return
+					}
+					time.Sleep(1 * time.Second)
+				}
+			}
+		}(timeout, toChan)
+		myGuess, isTO := board.WaitGuess(ch, toChan, time.Duration(timeout+gracePeriod)*time.Second)
 		recentGuess = myGuess
 		if isTO {
 			toMsg := Message{Type: "timeout"}
@@ -355,4 +373,9 @@ func setScore(board *game.Board, guess string, hit int, blow int) {
 	guessCell.Set("innerHTML", guess)
 	hitCell.Set("innerHTML", hit)
 	blowCell.Set("innerHTML", blow)
+}
+
+func setTimer(second int) {
+	timer := js.Global().Get("document").Call("getElementById", "timer")
+	timer.Set("innerHTML", second)
 }

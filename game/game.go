@@ -265,9 +265,10 @@ func (b *Board) AddOpQA(qa *QA) {
 	b.opQA = append(b.opQA, qa)
 }
 
-func (b *Board) WaitGuess(ch chan *Guess, to time.Duration) (*Guess, bool) {
+func (b *Board) WaitGuess(ch chan *Guess, toChan chan struct{}, to time.Duration) (*Guess, bool) {
 	select {
 	case guess := <-ch:
+		close(toChan)
 		return guess, false
 	case <-time.After(to):
 		return nil, true
