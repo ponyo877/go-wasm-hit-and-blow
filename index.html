@@ -51,6 +51,12 @@
             font-size: 24px;
             cursor: pointer;
         }
+        #clear {
+            width: 100px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+        }
         .title {
             display: flex;
             justify-content: space-around;
@@ -90,6 +96,12 @@
         #display-turn {
             font-size: 15px;
             margin: 10px;
+        }
+        #input-number {
+            width: 200px;
+            height: 50px;
+            font-size: 48px;
+            text-align: center;
         }
         .numbers {
             display: flex;
@@ -181,20 +193,21 @@
         <div id="display-turn">Turn Display</div>
         <div class="numbers">
             <div id="timer">60</div>
-            <input id="message" type="text" value=""></input>
+            <input id="input-number" type="text" value="" disabled></input>
+            <button onclick="window.Clear()" id="clear">⌫</button>
             <button onclick="window.SendGuess()" id="send">SEND</button>
         </div>
         <div class="buttons">
-            <button>0</button>
-            <button>1</button>
-            <button>2</button>
-            <button>3</button>
-            <button>4</button>
-            <button>5</button>
-            <button>6</button>
-            <button>7</button>
-            <button>8</button>
-            <button>9</button>
+            <button id="input-0" onclick="window.Input0()">0</button>
+            <button id="input-1" onclick="window.Input1()">1</button>
+            <button id="input-2" onclick="window.Input2()">2</button>
+            <button id="input-3" onclick="window.Input3()">3</button>
+            <button id="input-4" onclick="window.Input4()">4</button>
+            <button id="input-5" onclick="window.Input5()">5</button>
+            <button id="input-6" onclick="window.Input6()">6</button>
+            <button id="input-7" onclick="window.Input7()">7</button>
+            <button id="input-8" onclick="window.Input8()">8</button>
+            <button id="input-9" onclick="window.Input9()">9</button>
         </div>
     </div>
 </body>

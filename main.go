@@ -11,6 +11,7 @@ import (
 	"log"
 	"math/rand"
 	"net/url"
+	"strconv"
 	"syscall/js"
 	"time"
 
@@ -154,7 +155,7 @@ func main() {
 	}))
 	js.Global().Set("SendGuess", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
 		go func() {
-			el := getElementByID("message")
+			el := getElementByID("input-number")
 			message := el.Get("value").String()
 			if message == "" {
 				js.Global().Call("alert", "Message must not be empty")
@@ -167,6 +168,34 @@ func main() {
 			ch <- game.NewGuessFromText(message)
 			logElem(fmt.Sprintf("[You]: %s\n", message))
 			el.Set("value", "")
+		}()
+		return js.Undefined()
+	}))
+	for i := 0; i <= 9; i++ {
+		s := strconv.Itoa(i)
+		js.Global().Set("Input"+s, js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
+			go func() {
+				log.Printf("Input: %s\n", s)
+				el := getElementByID("input-number")
+				message := el.Get("value").String()
+				if len(message) >= 3 {
+					return
+				}
+				message += s
+				el.Set("value", message)
+				getElementByID("input-"+s).Set("disabled", true)
+			}()
+			return js.Undefined()
+		}))
+	}
+	js.Global().Set("Clear", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
+		go func() {
+			el := getElementByID("input-number")
+			el.Set("value", "")
+			for i := 0; i <= 9; i++ {
+				s := strconv.Itoa(i)
+				getElementByID("input-"+s).Set("disabled", false)
+			}
 		}()
 		return js.Undefined()
 	}))
@@ -280,6 +309,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			return
 		case "expose":
 			setHand(false, game.NewHandFromText(message.MyHand))
+			return
 		default:
 			return
 		}
@@ -349,21 +379,15 @@ func getElementByID(id string) js.Value {
 
 func setJudge(judge game.JudgeStatus) {
 	myJudge := js.Global().Get("document").Call("getElementById", "my-judge")
-	opJudge := js.Global().Get("document").Call("getElementById", "op-judge")
 	switch judge {
 	case game.Win:
 		myJudge.Set("id", "win")
-		opJudge.Set("id", "lose")
 		myJudge.Set("innerHTML", "WIN")
-		opJudge.Set("innerHTML", "LOSE")
 	case game.Lose:
 		myJudge.Set("id", "lose")
-		opJudge.Set("id", "win")
 		myJudge.Set("innerHTML", "LOSE")
-		opJudge.Set("innerHTML", "WIN")
 	case game.Draw:
 		myJudge.Set("innerHTML", "DRAW")
-		opJudge.Set("innerHTML", "DRAW")
 	default:
 		return
 	}
