@@ -67,6 +67,7 @@ func main() {
 	board := game.NewBoard()
 
 	js.Global().Set("Search", js.FuncOf(func(_ js.Value, _ []js.Value) interface{} {
+		js.Global().Get("document").Call("getElementById", "start").Set("disabled", true)
 		go func() {
 			ws, _, err := websocket.Dial(context.Background(), mmURL.String(), nil)
 			if err != nil {
@@ -105,6 +106,7 @@ func main() {
 						initTurn := game.NewTurnBySeed(seed)
 						myHand := game.NewHandBySeed(seed)
 						log.Printf("myHand(opener): %v", myHand)
+						setHand(true, myHand)
 						board.Start(myHand, initTurn)
 						if board.IsMyTurnInit() {
 							log.Printf("YOU FIRST !!!")
@@ -180,11 +182,12 @@ func shortHash(now time.Time) (string, error) {
 }
 
 type Message struct {
-	Type  string `json:"type"`
-	Turn  *int   `json:"turn,omitempty"`
-	Hit   *int   `json:"hit,omitempty"`
-	Blow  *int   `json:"blow,omitempty"`
-	Guess string `json:"guess,omitempty"`
+	Type   string `json:"type"`
+	Turn   *int   `json:"turn,omitempty"`
+	Hit    *int   `json:"hit,omitempty"`
+	Blow   *int   `json:"blow,omitempty"`
+	Guess  string `json:"guess,omitempty"`
+	MyHand string `json:"my_hand,omitempty"`
 }
 
 func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) func(webrtc.DataChannelMessage) {
@@ -209,6 +212,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 				seed := rand.Int()
 				myHand := game.NewHandBySeed(seed)
 				log.Printf("myHand(unopener): %v", myHand)
+				setHand(true, myHand)
 				board.Start(myHand, initTurn)
 				if board.IsMyTurnInit() {
 					log.Printf("YOU FIRST!!!")
@@ -251,8 +255,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 				return
 			}
 			if j != game.NotYet {
-				setTurn("Finish !!!")
-				board.Finish()
+				finishProcess(dc, board)
 				return
 			}
 			// guess送信処理に続く
@@ -267,16 +270,16 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			j := board.Judge()
 			setJudge(j)
 			if j != game.NotYet {
-				setTurn("Finish !!!")
-				board.Finish()
+				finishProcess(dc, board)
 				return
 			}
 			return
 		case "timeout":
 			setJudge(game.Win)
-			setTurn("Finish !!!")
-			board.Finish()
+			finishProcess(dc, board)
 			return
+		case "expose":
+			setHand(false, game.NewHandFromText(message.MyHand))
 		default:
 			return
 		}
@@ -315,8 +318,7 @@ func onMessage(dc *webrtc.DataChannel, ch chan *game.Guess, board *game.Board) f
 			}
 			logElem("[Sys]: You Timeout! You Lose!\n")
 			setJudge(game.Lose)
-			setTurn("Finish !!!")
-			board.Finish()
+			finishProcess(dc, board)
 			return
 		}
 		guessMsg := Message{Type: "guess", Guess: myGuess.Msg()}
@@ -392,4 +394,26 @@ func setTimer(second int) {
 func setTurn(message string) {
 	turnElem := js.Global().Get("document").Call("getElementById", "display-turn")
 	turnElem.Set("innerHTML", message)
+}
+
+func setHand(isMyHand bool, hand *game.Hand) {
+	handID := "op-hand"
+	if isMyHand {
+		handID = "my-hand"
+	}
+	for i, number := range *hand {
+		handElem := js.Global().Get("document").Call("getElementById", fmt.Sprintf("%s-%d", handID, i+1))
+		handElem.Set("innerHTML", number)
+	}
+}
+
+func finishProcess(dc *webrtc.DataChannel, board *game.Board) {
+	setTurn("Finish !!!")
+	exposeMsg := Message{Type: "expose", MyHand: board.MyHandText()}
+	by, _ := json.Marshal(exposeMsg)
+	if err := dc.SendText(string(by)); err != nil {
+		log.Printf("failed to send exposeMsg: %v", err)
+		return
+	}
+	board.Finish()
 }

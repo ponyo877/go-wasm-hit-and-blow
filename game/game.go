@@ -55,8 +55,21 @@ func NewHand(numbers []int) *Hand {
 	return &hand
 }
 
+func NewHandFromText(numStr string) *Hand {
+	var numbers []int
+	for _, r := range numStr {
+		numbers = append(numbers, int(r-'0'))
+	}
+	return NewHand(numbers)
+}
+
 func NewHandBySeed(seed int) *Hand {
 	return &allHands[seed%numOfAllHandsPatturn]
+}
+
+func (h *Hand) Msg() string {
+	n := []int(*h)
+	return fmt.Sprintf("%d%d%d", n[0], n[1], n[2])
 }
 
 type Guess Hand
@@ -134,7 +147,7 @@ type Board struct {
 	state       State
 	initTurn    Turn
 	turn        Turn
-	myHands     *Hand
+	myHand      *Hand
 	myQA        []*QA
 	opQA        []*QA
 	myTurnCount int
@@ -196,7 +209,7 @@ func (b *Board) TurnCount() int {
 func (b *Board) Start(hand *Hand, initTurn Turn) {
 	b.state = Playing
 	b.initTurn, b.turn = initTurn, initTurn
-	b.myHands = hand
+	b.myHand = hand
 }
 
 type JudgeStatus int
@@ -252,7 +265,7 @@ func (b *Board) Finish() {
 }
 
 func (b *Board) CalcAnswer(guess *Guess) *Answer {
-	return b.myHands.Answer(guess)
+	return b.myHand.Answer(guess)
 }
 
 func (b *Board) AddMyQA(qa *QA) {
@@ -273,4 +286,8 @@ func (b *Board) WaitGuess(ch chan *Guess, toChan chan struct{}, to time.Duration
 	case <-time.After(to):
 		return nil, true
 	}
+}
+
+func (b *Board) MyHandText() string {
+	return b.myHand.Msg()
 }

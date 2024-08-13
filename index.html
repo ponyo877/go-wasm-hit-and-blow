@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <title>P2P Hit & Blow</title>
 
+    <!-- ビューポートメタタグを追加 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <meta property="og:title" content="P2P Hit & Blow">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://p2p-chat.pages.dev">
@@ -33,11 +36,25 @@
         }
         .container {
             text-align: center;
+            width: 90%;
+            max-width: 300px;
+        }
+        #start {
+            width: 100%;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        #send {
+            width: 100px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
         }
         .title {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
         .title div {
             font-size: 32px;
@@ -60,10 +77,9 @@
         .game-board {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 20px;
         }
         .board table {
-            width: 20vh;
+            width: 100%;
             border-collapse: collapse;
         }
         .board th, .board td {
@@ -71,9 +87,9 @@
             padding: 10px;
             text-align: center;
         }
-        #display-turn{
+        #display-turn {
             font-size: 15px;
-            margin-bottom: 10px;
+            margin: 10px;
         }
         .numbers {
             display: flex;
@@ -87,36 +103,43 @@
         .buttons {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
+            gap: 5px;
             justify-content: center;
         }
         .buttons button {
-            width: 50px;
-            height: 50px;
+            width: 70px;
+            height: 70px;
             display: flex;
             justify-content: center;
             align-items: center;
             border: 1px solid black;
-            font-size: 24px;
+            font-size: 35px;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <p><button onclick="window.Search()" class="secondary">START</button></p>
+    
     <div class="container">
+        <button onclick="window.Search()" id="start">START</button>
         <div class="title">
             <div id="my-judge"></div>
             <div id="op-judge"></div>
         </div>
         <div class="id-rate">
             <div>
-                <div>ID: kj3sl</div>
-                <div>rate: 1500</div>
+                <div>kj3sl | rate: 1500</div>
+                hand:
+                <button id="my-hand-1">?</button>
+                <button id="my-hand-2">?</button>
+                <button id="my-hand-3">?</button>
             </div>
             <div>
-                <div>ID: mf38g</div>
-                <div>rate: 1400</div>
+                <div>mf38g | rate: 1400</div>
+                hand:
+                <button id="op-hand-1">?</button>
+                <button id="op-hand-2">?</button>
+                <button id="op-hand-3">?</button>
             </div>
         </div>
         <div class="game-board">
@@ -159,7 +182,7 @@
         <div class="numbers">
             <div id="timer">60</div>
             <input id="message" type="text" value=""></input>
-            <button onclick="window.SendGuess()" class="primary">SEND</button>
+            <button onclick="window.SendGuess()" id="send">SEND</button>
         </div>
         <div class="buttons">
             <button>0</button>
