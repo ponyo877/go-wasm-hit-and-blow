@@ -147,6 +147,7 @@ type Board struct {
 	state       State
 	initTurn    Turn
 	turn        Turn
+	pNum        int
 	myHand      *Hand
 	myQA        []*QA
 	opQA        []*QA
@@ -206,10 +207,11 @@ func (b *Board) TurnCount() int {
 	return b.opTurnCount
 }
 
-func (b *Board) Start(hand *Hand, initTurn Turn) {
+func (b *Board) Start(hand *Hand, initTurn Turn, pNum int) {
 	b.state = Playing
 	b.initTurn, b.turn = initTurn, initTurn
 	b.myHand = hand
+	b.pNum = pNum
 }
 
 type JudgeStatus int
@@ -290,4 +292,18 @@ func (b *Board) WaitGuess(ch chan *Guess, toChan chan struct{}, to time.Duration
 
 func (b *Board) MyHandText() string {
 	return b.myHand.Msg()
+}
+
+func (b *Board) PNum() int {
+	return b.PNum()
+}
+
+func (b *Board) Result() string {
+	if b.Judge() == Draw {
+		return "0.5"
+	}
+	if b.Judge() == Win && b.pNum == 1 || b.Judge() == Lose && b.pNum == 2 {
+		return "1"
+	}
+	return "0"
 }
