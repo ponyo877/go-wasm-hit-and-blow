@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"syscall/js"
 	"time"
@@ -70,7 +71,7 @@ type updateRatingResMsg struct {
 func main() {
 	mmURL := url.URL{Scheme: wsScheme, Host: matchmakingOrigin, Path: "/matchmaking"}
 	signalingURL := url.URL{Scheme: wsScheme, Host: signalingOrigin, Path: "/signaling"}
-	ratingURL := url.URL{Scheme: httpScheme, Host: ratingOrigin}
+	ratingURL := url.URL{Scheme: httpScheme, Host: ratingOrigin, Path: "/rating"}
 
 	now := time.Now()
 	window := js.Global().Get("window")
@@ -442,10 +443,6 @@ func logElem(msg string) {
 	// el.Set("innerHTML", el.Get("innerHTML").String()+msg)
 }
 
-func handleError() {
-	logElem("[Sys]: Maybe Any left, Please restart\n")
-}
-
 func getElementByID(id string) js.Value {
 	return js.Global().Get("document").Call("getElementById", id)
 }
@@ -524,7 +521,7 @@ func finishProcess(dc *webrtc.DataChannel, board *game.Board, finChan chan struc
 }
 
 func getRating(ratingURL url.URL, myID, opID string) (int, int, error) {
-	ratingURL.Path = "/start"
+	ratingURL.Path = path.Join(ratingURL.Path, "/start")
 	q := ratingURL.Query()
 	q.Set("p1", myID)
 	q.Set("p2", opID)
@@ -556,7 +553,7 @@ func updateRating(ratingURL url.URL, roomID, myID, hash string, pNum int, result
 		Hash:     hash,
 		Result:   result,
 	}
-	ratingURL.Path = "/finish"
+	ratingURL.Path = path.Join(ratingURL.Path, "/finish")
 	body, err := json.Marshal(resMsg)
 	if err != nil {
 		return err
