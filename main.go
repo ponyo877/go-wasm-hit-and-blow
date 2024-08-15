@@ -507,8 +507,8 @@ func setHand(isMyHand bool, hand *game.Hand) {
 func setProfile(myID, opID string, myRate, opRate int) {
 	myProfile := js.Global().Get("document").Call("getElementById", "my-profile")
 	opProfile := js.Global().Get("document").Call("getElementById", "op-profile")
-	myProfile.Set("innerHTML", fmt.Sprintf("%s(r% 4d)", myID, myRate))
-	opProfile.Set("innerHTML", fmt.Sprintf("%s(r% 4d)", opID, opRate))
+	myProfile.Set("innerHTML", fmt.Sprintf("%s(r%d)", myID, myRate))
+	opProfile.Set("innerHTML", fmt.Sprintf("%s(r%d)", opID, opRate))
 }
 
 func finishProcess(dc *webrtc.DataChannel, board *game.Board, finChan chan struct{}) {
