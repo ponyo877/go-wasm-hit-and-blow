@@ -78,9 +78,10 @@ func main() {
 	localStorage := window.Get("localStorage")
 
 	var userID, hash string
-	userID = localStorage.Get("userID").String()
+	userIDjs := localStorage.Get("userID")
+	userID = userIDjs.String()
 	hash = localStorage.Get("hash").String()
-	if len(userID) == 0 {
+	if userIDjs.Equal(js.Undefined()) {
 		userID = shortHash(now)
 		localStorage.Set("userID", userID)
 		localStorage.Set("hash", sha256Hash(solt+userID+solt))
